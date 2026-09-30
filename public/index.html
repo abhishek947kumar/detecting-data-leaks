@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detecting Data Leaks Using SQL | Cloud DLP & AESX Security</title>
+  <meta name="description" content="Cloud-based Data Loss Prevention (DLP) system detecting SQL injections and data leaks using Content Inspection, Contextual Analysis, and AESX Encryption.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="brand-icon">🛡️</div>
+      <div class="brand-title">
+        <span>DLP SENTINEL</span>
+        <span class="sub">SQL Data Leak Detection & AESX Cloud</span>
+      </div>
+    </div>
+
+    <!-- Main View Switcher -->
+    <div class="nav-tabs">
+      <button class="nav-tab-btn active" id="btn-view-store">
+        🛒 Nexus E-Shop
+      </button>
+      <button class="nav-tab-btn soc-btn" id="btn-view-soc">
+        ⚡ Cloud DLP SOC
+      </button>
+    </div>
+
+    <!-- Telemetry & Actions -->
+    <div class="nav-actions">
+      <div class="stream-badge" title="Real-time Server-Sent Events connected">
+        <span class="pulse-dot"></span>
+        <span id="stream-status">LIVE STREAM</span>
+      </div>
+
+      <div class="user-status-pill" id="nav-user-pill" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; background: rgba(255,255,255,0.06); padding: 0.35rem 0.85rem; border-radius: 999px; border: 1px solid var(--border-subtle);">
+        <span>👤</span>
+        <span id="nav-username">Guest</span>
+        <span class="badge badge-benign" id="nav-user-category">Benign</span>
+      </div>
+
+      <button class="btn btn-secondary" id="btn-open-cart" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+        🛒 Cart (<span id="cart-count">0</span>)
+      </button>
+
+      <button class="btn btn-purple" id="btn-quick-attack" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;">
+        ⚡ Attack Lab
+      </button>
+    </div>
+  </nav>
+
+  <!-- App Main Content Container -->
+  <main class="app-container">
+
+    <!-- ======================================================== -->
+    <!-- VIEW 1: E-COMMERCE STOREFRONT ("Nexus E-Shop")           -->
+    <!-- ======================================================== -->
+    <section class="view-panel active" id="view-storefront">
+      
+      <!-- Hero & Search Box -->
+      <div class="hero-section">
+        <div class="hero-tag">
+          <span>🔒 AESX 256-Bit Authenticated Field-Level Encryption Active</span>
+        </div>
+        <h1 class="hero-title">
+          Secure Hardware & <span class="gradient-text">Next-Gen Cyber Tech</span>
+        </h1>
+        <p class="hero-desc">
+          Simulating an active enterprise e-commerce platform. All queries, authentication attempts,
+          and customer communications are scrutinized in real-time by the Cloud DLP Engine.
+        </p>
+
+        <!-- Interactive Search Container -->
+        <div class="search-container">
+          <form id="search-form">
+            <div class="search-input-group">
+              <span class="search-icon-pos">🔍</span>
+              <input 
+                type="text" 
+                id="search-input" 
+                class="search-input" 
+                placeholder="Search products or test SQL injection payloads (e.g., ' OR '1'='1)..."
+                autocomplete="off"
+              >
+              <button type="submit" class="btn btn-primary" id="btn-execute-search">
+                Search Catalog
+              </button>
+            </div>
+          </form>
+
+          <!-- Search Options & Quick Attack Chips -->
+          <div class="search-controls">
+            <div class="search-chips">
+              <span style="color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase;">Quick Test:</span>
+              <button class="chip" data-query="Titan">Normal: "Titan"</button>
+              <button class="chip" data-query="Router">Normal: "Router"</button>
+              <button class="chip chip-sqli" data-query="' OR '1'='1">SQLi: ' OR '1'='1</button>
+              <button class="chip chip-sqli" data-query="' UNION SELECT 1, username, credit_card_encrypted, 4, 5, 6, 7 FROM customer_profiles --">SQLi: UNION Exfiltrate</button>
+              <button class="chip chip-sqli" data-query="admin' --">SQLi: admin' --</button>
+              <button class="chip chip-sqli" data-query="; DROP TABLE orders; --">SQLi: Stacked DDL</button>
+            </div>
+
+            <!-- Vulnerable Mode Toggle -->
+            <label class="switch-label" title="Toggle vulnerable raw SQL mode vs protected DLP gateway">
+              <div class="switch-toggle">
+                <input type="checkbox" id="toggle-bypass-dlp">
+                <span class="slider"></span>
+              </div>
+              <span id="dlp-toggle-text" style="font-weight: 600; color: var(--emerald-success);">DLP Shield Active</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Search / DLP Banner Alert -->
+      <div id="search-alert-box" style="display: none; margin-bottom: 2rem;"></div>
+
+      <!-- Product Catalog Section -->
+      <div class="products-header">
+        <div>
+          <h2>Available Products</h2>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">Cryptographic inventory stored in encrypted SQLite database</p>
+        </div>
+        <div id="catalog-status" style="font-size: 0.85rem; color: var(--cyan-primary); font-family: var(--font-mono);">
+          Loading catalog...
+        </div>
+      </div>
+
+      <div class="product-grid" id="product-grid">
+        <!-- Injected via store.js -->
+      </div>
+
+      <!-- Bottom Grid: Customer Communication & Keystroke Monitor -->
+      <div class="storefront-bottom-grid">
+        <!-- Customer Communication Portal (Testing Message-based Leaks) -->
+        <div class="chat-portal-card">
+          <div class="card-heading">
+            <span>💬 Customer Support & Data Leak Test Portal</span>
+          </div>
+          <p class="card-subtext">
+            Test outbound messages for accidental or intentional data leaks (e.g. Credit cards, SSNs, Passwords, or Keylogger scripts).
+          </p>
+
+          <form id="chat-form" class="chat-input-area">
+            <textarea 
+              id="chat-message-input" 
+              class="chat-textarea" 
+              placeholder="Type customer message or test sensitive data leakage payloads..."
+            ></textarea>
+
+            <div class="chat-quick-actions">
+              <button type="button" class="chip" id="chip-chat-benign">Harmless Inquiry</button>
+              <button type="button" class="chip chip-sqli" id="chip-chat-cc-leak">Exfiltrate CC & SSN</button>
+              <button type="button" class="chip chip-sqli" id="chip-chat-keylogger">Inject Keylogger Script</button>
+              <button type="button" class="chip chip-sqli" id="chip-chat-ransomware">Ransomware Powershell</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+              <span id="chat-typing-speed" style="font-size: 0.75rem; color: var(--text-dim); font-family: var(--font-mono);">
+                Typing Cadence: Ready
+              </span>
+              <button type="submit" class="btn btn-primary" style="padding: 0.5rem 1.2rem; font-size: 0.85rem;">
+                Send Message
+              </button>
+            </div>
+          </form>
+
+          <div id="chat-result-box" style="display: none; margin-top: 1rem;"></div>
+        </div>
+
+        <!-- Keystroke Anomaly & Cryptographic Protection Summary -->
+        <div class="keystroke-card">
+          <div class="card-heading">
+            <span>🛡️ Anti-Keystroke & AESX Architecture</span>
+          </div>
+          <p class="card-subtext">
+            How this system neutralizes credential theft and ransomware attacks:
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 0.9rem; font-size: 0.85rem;">
+            <div style="background: rgba(10, 16, 30, 0.6); padding: 0.8rem; border-radius: var(--radius-sm); border-left: 3px solid var(--cyan-primary);">
+              <strong style="color: var(--cyan-primary);">1. Content Inspection:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem;">
+                Every input string is parsed against regex AST patterns for SQL tautologies, UNION keywords, and Luhn-validated credit cards.
+              </p>
+            </div>
+
+            <div style="background: rgba(10, 16, 30, 0.6); padding: 0.8rem; border-radius: var(--radius-sm); border-left: 3px solid var(--purple-accent);">
+              <strong style="color: var(--purple-accent);">2. Contextual Behavioral Scoring:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem;">
+                Tracks query velocity, sub-human typing intervals (script replay vs genuine human keystrokes), and consecutive error fuzzing.
+              </p>
+            </div>
+
+            <div style="background: rgba(10, 16, 30, 0.6); padding: 0.8rem; border-radius: var(--radius-sm); border-left: 3px solid var(--emerald-success);">
+              <strong style="color: var(--emerald-success);">3. AESX Authenticated Vault:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem;">
+                Even if an attacker bypasses application logic, data in SQLite is stored in <code>AESX$[iv]$[tag]$[cipher]</code> format, rendering raw dumps useless.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: SECURITY OPERATIONS CENTER (DLP SOC)             -->
+    <!-- ======================================================== -->
+    <section class="view-panel" id="view-soc">
+      
+      <!-- SOC Header & Sub-navigation -->
+      <div class="soc-header">
+        <div class="soc-title-wrap">
+          <span style="font-size: 0.8rem; color: var(--purple-accent); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">
+            Cloud Security Operations Center
+          </span>
+          <h1>DLP Threat Telemetry & Mitigation</h1>
+        </div>
+
+        <div class="soc-subnav">
+          <button class="soc-tab-btn active" data-soctab="soc-overview">📊 Live Incident Stream</button>
+          <button class="soc-tab-btn" data-soctab="soc-sandbox">🧪 Inspection Sandbox</button>
+          <button class="soc-tab-btn" data-soctab="soc-users">👥 User Risk & Lockdown</button>
+          <button class="soc-tab-btn" data-soctab="soc-vault">🔐 AESX Vault Explorer</button>
+          <button class="soc-tab-btn" data-soctab="soc-attack-lab">⚡ Attack Simulator</button>
+        </div>
+      </div>
+
+      <!-- SOC TAB 1: EXECUTIVE OVERVIEW & LIVE INCIDENTS -->
+      <div class="soc-tab-content active" id="tab-soc-overview">
+        <!-- 4 KPI Metric Cards -->
+        <div class="soc-kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-icon">🛡️</span>
+            <div class="kpi-value" id="kpi-total-incidents">0</div>
+            <div class="kpi-label">Total DLP Inspections</div>
+          </div>
+
+          <div class="kpi-card kpi-danger">
+            <span class="kpi-icon">🚨</span>
+            <div class="kpi-value" id="kpi-critical-incidents" style="color: var(--rose-danger);">0</div>
+            <div class="kpi-label">Critical Threat Alerts</div>
+          </div>
+
+          <div class="kpi-card kpi-warning">
+            <span class="kpi-icon">🛑</span>
+            <div class="kpi-value" id="kpi-blocked-actions" style="color: var(--amber-warning);">0</div>
+            <div class="kpi-label">Blocked Assaulters & Leaks</div>
+          </div>
+
+          <div class="kpi-card kpi-purple">
+            <span class="kpi-icon">🔑</span>
+            <div class="kpi-value" id="kpi-active-sessions" style="font-size: 1.4rem; padding-top: 0.5rem; color: var(--purple-accent);">
+              AESX-256-GCM
+            </div>
+            <div class="kpi-label" id="kpi-key-fingerprint">Key: ACTIVE</div>
+          </div>
+        </div>
+
+        <!-- Incident Stream Card -->
+        <div class="incident-stream-card">
+          <div class="incident-feed-header">
+            <div>
+              <h3>Real-Time Security Incident Stream</h3>
+              <p style="color: var(--text-muted); font-size: 0.85rem;">Live audit telemetry streamed via Server-Sent Events (SSE)</p>
+            </div>
+            <div style="display: flex; gap: 0.8rem; align-items: center;">
+              <button class="btn btn-secondary" id="btn-refresh-incidents" style="padding: 0.4rem 0.9rem; font-size: 0.8rem;">
+                🔄 Refresh Feed
+              </button>
+              <button class="btn btn-secondary" id="btn-clear-feed-ui" style="padding: 0.4rem 0.9rem; font-size: 0.8rem;">
+                Clear View
+              </button>
+            </div>
+          </div>
+
+          <!-- Incidents Table -->
+          <div class="incident-table-wrap">
+            <table class="incident-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>User / IP</th>
+                  <th>Detection Layer</th>
+                  <th>Rule Matched</th>
+                  <th>Threat Level</th>
+                  <th>Action Taken</th>
+                  <th>Payload Snippet</th>
+                </tr>
+              </thead>
+              <tbody id="incidents-table-body">
+                <tr>
+                  <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 2rem;">
+                    Monitoring active. Incidents will appear here in real-time...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOC TAB 2: INSPECTION SANDBOX -->
+      <div class="soc-tab-content" id="tab-soc-sandbox" style="display: none;">
+        <div class="sandbox-grid">
+          <!-- Terminal Input -->
+          <div class="sandbox-terminal">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="terminal-dot dot-red"></span>
+                <span class="terminal-dot dot-yellow"></span>
+                <span class="terminal-dot dot-green"></span>
+              </div>
+              <span style="font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan-primary);">
+                dlp-inspector --sandbox-mode
+              </span>
+            </div>
+
+            <div style="margin-bottom: 0.8rem; display: flex; gap: 0.8rem;">
+              <select id="sandbox-context-select" class="search-input" style="flex: 1; padding: 0.5rem 0.8rem;">
+                <option value="SQL_QUERY">Context: SQL Query</option>
+                <option value="USER_CHAT">Context: User Chat / Message</option>
+                <option value="AUTH_LOGIN">Context: Authentication Input</option>
+                <option value="CHECKOUT">Context: Payment / PII</option>
+              </select>
+
+              <button class="btn btn-secondary" id="btn-sandbox-load-sample" style="padding: 0.5rem 0.9rem; font-size: 0.8rem;">
+                Load Sample
+              </button>
+            </div>
+
+            <textarea 
+              id="sandbox-payload-input" 
+              class="chat-textarea" 
+              style="flex: 1; min-height: 220px; font-size: 0.9rem;"
+              placeholder="Paste raw SQL, HTTP query string, or customer message to inspect..."
+            >' UNION SELECT id, username, credit_card_encrypted FROM customer_profiles --</textarea>
+
+            <div style="margin-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <label style="font-size: 0.82rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="checkbox" id="sandbox-sim-context" checked>
+                Simulate Contextual Anomaly Engine
+              </label>
+
+              <button class="btn btn-primary" id="btn-run-sandbox">
+                ⚡ Run DLP Inspection
+              </button>
+            </div>
+          </div>
+
+          <!-- Inspection Verdict Output -->
+          <div class="sandbox-results" id="sandbox-output-panel">
+            <div style="text-align: center; color: var(--text-dim); padding: 3rem;">
+              Run an inspection in the terminal to inspect tokens, regex matches, and cryptographic signatures.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOC TAB 3: USER THREAT CATEGORIZATION & LOCKDOWN -->
+      <div class="soc-tab-content" id="tab-soc-users" style="display: none;">
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3>User Behavioral Categorization Matrix</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">
+              Users are dynamically placed into categories based on Content Inspection and Contextual Activity
+            </p>
+          </div>
+          <button class="btn btn-secondary" id="btn-refresh-users" style="padding: 0.45rem 1rem; font-size: 0.85rem;">
+            🔄 Refresh Users
+          </button>
+        </div>
+
+        <div class="threat-matrix-grid">
+          <!-- Benign Column -->
+          <div class="category-column" style="border-top: 3px solid var(--emerald-success);">
+            <div class="category-column-header">
+              <span style="font-weight: 700; color: var(--emerald-success);">🟢 Benign Users (Score &lt; 30)</span>
+              <span class="badge badge-benign" id="count-benign-users">0</span>
+            </div>
+            <div id="users-benign-list" style="flex: 1; overflow-y: auto; max-height: 480px;">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Suspicious Column -->
+          <div class="category-column" style="border-top: 3px solid var(--amber-warning);">
+            <div class="category-column-header">
+              <span style="font-weight: 700; color: var(--amber-warning);">🟡 Suspicious Users (Score 30-69)</span>
+              <span class="badge badge-suspicious" id="count-suspicious-users">0</span>
+            </div>
+            <div id="users-suspicious-list" style="flex: 1; overflow-y: auto; max-height: 480px;">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Assaulters Column -->
+          <div class="category-column" style="border-top: 3px solid var(--rose-danger);">
+            <div class="category-column-header">
+              <span style="font-weight: 700; color: var(--rose-danger);">🔴 Assaulters (Score &ge; 70)</span>
+              <span class="badge badge-assaulter" id="count-assaulters">0</span>
+            </div>
+            <div id="users-assaulters-list" style="flex: 1; overflow-y: auto; max-height: 480px;">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOC TAB 4: AESX ENCRYPTION VAULT EXPLORER -->
+      <div class="soc-tab-content" id="tab-soc-vault" style="display: none;">
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+          <div>
+            <h3>AESX Cryptographic Database Vault</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">
+              Comparing raw SQLite ciphertext storage vs authorized decrypted customer data.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.8rem;">
+            <button class="btn btn-secondary" id="btn-refresh-vault" style="padding: 0.45rem 1rem; font-size: 0.85rem;">
+              🔄 Refresh Vault
+            </button>
+            <button class="btn btn-danger" id="btn-test-tamper" style="padding: 0.45rem 1rem; font-size: 0.85rem;">
+              🧪 Simulate Cipher Tampering
+            </button>
+          </div>
+        </div>
+
+        <!-- Tamper Test Result Box -->
+        <div id="vault-tamper-result" style="display: none; margin-bottom: 1.5rem;"></div>
+
+        <!-- Vault Profiles List -->
+        <div id="vault-profiles-container">
+          <!-- Injected via vault.js -->
+        </div>
+      </div>
+
+      <!-- SOC TAB 5: ATTACK SIMULATOR -->
+      <div class="soc-tab-content" id="tab-soc-attack-lab" style="display: none;">
+        <div style="margin-bottom: 1.5rem;">
+          <h3>Attack Vector Simulation Laboratory</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            Trigger real-world attack vectors with a single click to see the DLP Shield detect, score, and restrict the assaulter.
+          </p>
+        </div>
+
+        <div class="attack-grid">
+          <!-- Vector 1: SQLi Auth Bypass -->
+          <div class="attack-card">
+            <span class="attack-vector-tag">Vector 01: SQL Injection</span>
+            <h3>Classic Tautology Auth Bypass</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              Submits <code>' OR '1'='1' --</code> into the credential handler to bypass password verification.
+            </p>
+            <div class="attack-payload-preview">
+              Payload: ' OR '1'='1' --
+            </div>
+            <button class="btn btn-danger btn-sim-attack" data-attack="SQLI_AUTH_BYPASS" style="margin-top: auto;">
+              Launch SQLi Auth Bypass
+            </button>
+          </div>
+
+          <!-- Vector 2: Union-Based Exfiltration -->
+          <div class="attack-card">
+            <span class="attack-vector-tag">Vector 02: SQL Exfiltration</span>
+            <h3>Union-Based Card Harvesting</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              Attempts to dump encrypted credit card profiles across tables via catalog search parameter.
+            </p>
+            <div class="attack-payload-preview">
+              Payload: Titan' UNION SELECT id, username, credit_card_encrypted...
+            </div>
+            <button class="btn btn-danger btn-sim-attack" data-attack="SQLI_UNION_EXFILTRATION" style="margin-top: auto;">
+              Launch Union Exfiltration
+            </button>
+          </div>
+
+          <!-- Vector 3: PII Exfiltration -->
+          <div class="attack-card">
+            <span class="attack-vector-tag">Vector 03: Data Leakage</span>
+            <h3>Outbound PII / Financial Leak</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              Attempts to transmit valid Luhn credit cards and SSNs via public customer chat channel.
+            </p>
+            <div class="attack-payload-preview">
+              Payload: SSN: 234-56-7890 Card: 4532718293847561...
+            </div>
+            <button class="btn btn-danger btn-sim-attack" data-attack="PII_MASS_LEAK" style="margin-top: auto;">
+              Launch PII Leak Attempt
+            </button>
+          </div>
+
+          <!-- Vector 4: Keystroke Theft Script -->
+          <div class="attack-card">
+            <span class="attack-vector-tag">Vector 04: Credential Theft</span>
+            <h3>Keystroke Logger Script Injection</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              Injects client-side keylogger script to steal innocents' passwords and keystroke dynamics.
+            </p>
+            <div class="attack-payload-preview">
+              Payload: &lt;script&gt;window.addEventListener('keypress'...
+            </div>
+            <button class="btn btn-danger btn-sim-attack" data-attack="KEYSTROKE_LOGGER_INJECTION" style="margin-top: auto;">
+              Launch Keylogger Injection
+            </button>
+          </div>
+
+          <!-- Vector 5: Scanner Velocity Burst -->
+          <div class="attack-card">
+            <span class="attack-vector-tag">Vector 05: Contextual Velocity</span>
+            <h3>Automated Bot Scanner Probe</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              Fires 12 rapid queries in &lt;1 second to trigger the contextual rate anomaly & bot alarm.
+            </p>
+            <div class="attack-payload-preview">
+              Payload: Rapid-fire fuzzing burst (12 requests / sec)
+            </div>
+            <button class="btn btn-danger btn-sim-attack" data-attack="SCANNER_VELOCITY_BURST" style="margin-top: auto;">
+              Launch Velocity Probe
+            </button>
+          </div>
+        </div>
+
+        <!-- Simulation Feedback Modal/Box -->
+        <div id="sim-attack-feedback" style="display: none; margin-top: 2rem;"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Shopping Cart Drawer -->
+  <aside class="cart-drawer" id="cart-drawer">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+      <h3>Your Cart</h3>
+      <button class="close-btn" id="btn-close-cart">&times;</button>
+    </div>
+
+    <div class="cart-items-list" id="cart-items-list">
+      <div style="text-align: center; color: var(--text-dim); margin-top: 3rem;">
+        Your cart is empty. Add security hardware to test checkout!
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 1.1rem; font-weight: 700;">
+        <span>Total:</span>
+        <span id="cart-total-amount">$0.00</span>
+      </div>
+
+      <button class="btn btn-primary" id="btn-open-checkout" style="width: 100%;">
+        Proceed to Secure Checkout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Secure Checkout with AESX Field Encryption</h3>
+        <button class="close-btn" id="btn-close-checkout">&times;</button>
+      </div>
+
+      <form id="checkout-form">
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Full Name</label>
+          <input type="text" id="checkout-name" class="search-input" style="width: 100%; padding-left: 1rem;" value="Alice Smith" required>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Shipping Address (AESX Encrypted in DB)</label>
+          <input type="text" id="checkout-address" class="search-input" style="width: 100%; padding-left: 1rem;" value="742 Evergreen Terrace, Springfield, OR" required>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.3rem;">Credit Card Number (Luhn-Verified &amp; AES-256 Protected)</label>
+          <input type="text" id="checkout-card" class="search-input" style="width: 100%; padding-left: 1rem;" value="4532-7182-9384-7561" required>
+        </div>
+
+        <div id="checkout-encryption-preview" style="background: #050811; border: 1px solid var(--border-glow); border-radius: var(--radius-sm); padding: 0.8rem; margin-bottom: 1.2rem; font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan-primary);">
+          🔒 Ciphertext Preview: AESX$0a8c... (GCM Auth Tag generated upon commit)
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem;">
+          Confirm Order &amp; Encrypt in Database
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Incident Detail Modal -->
+  <div class="modal-overlay" id="incident-modal">
+    <div class="modal-box" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 id="incident-modal-title">Incident Audit Details</h3>
+        <button class="close-btn" id="btn-close-incident-modal">&times;</button>
+      </div>
+      <div id="incident-modal-body">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Client JavaScript Modules -->
+  <script src="js/app.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/soc.js"></script>
+  <script src="js/sandbox.js"></script>
+  <script src="js/vault.js"></script>
+</body>
+</html>
